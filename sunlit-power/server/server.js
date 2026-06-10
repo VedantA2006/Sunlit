@@ -34,7 +34,7 @@ app.use(helmet({
   crossOriginResourcePolicy: false // Allows loading local uploads in frontend from localhost
 }));
 const allowedOrigins = process.env.CLIENT_URL 
-  ? process.env.CLIENT_URL.split(',').map(url => url.trim()) 
+  ? process.env.CLIENT_URL.split(',').map(url => url.trim().replace(/\/$/, '')) 
   : ['http://localhost:5173', 'http://localhost:5174'];
 
 app.use(cors({
