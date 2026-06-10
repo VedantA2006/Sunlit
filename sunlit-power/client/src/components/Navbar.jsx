@@ -31,7 +31,7 @@ export const Navbar = () => {
           {/* Logo / Brand */}
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className="flex items-center">
-              <img src="/logo.svg" alt="Arenq Logo" className="h-10 w-auto" />
+              <img src="/logo.svg" alt="Sunlit Power Logo" className="h-10 w-auto" />
             </Link>
           </div>
 

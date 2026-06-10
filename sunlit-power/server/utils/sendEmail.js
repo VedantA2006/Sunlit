@@ -27,11 +27,11 @@ const sendEmail = async ({ to, subject, html }) => {
           pass: process.env.EMAIL_PASS
         }
       });
-      fromEmail = process.env.EMAIL_USER || 'support@arenq.com';
+      fromEmail = process.env.EMAIL_USER || 'support@sunlitpower.in';
     }
 
     const mailOptions = {
-      from: `"Arenq Support" <${fromEmail}>`,
+      from: `"Sunlit Power Support" <${fromEmail}>`,
       to,
       subject,
       html

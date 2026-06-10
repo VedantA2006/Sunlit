@@ -48,7 +48,7 @@ export const Home = () => {
           {/* Brand */}
           <Link to="/" className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-3xl font-variation-settings-[('FILL'_1)]">bolt</span>
-            <span className="font-display-lg text-headline-md text-primary font-bold tracking-tight">ARENQ</span>
+            <span className="font-display-lg text-headline-md text-primary font-bold tracking-tight">SUNLIT POWER</span>
           </Link>
           {/* Navigation Links (Desktop) */}
           <div className="hidden md:flex items-center gap-8">
@@ -304,11 +304,11 @@ export const Home = () => {
       <section id="about" className="py-24 px-container-padding max-w-[1440px] mx-auto w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div className="space-y-6 text-left">
-            <span className="font-label-md text-label-md text-secondary uppercase tracking-widest font-bold">About Arenq</span>
+            <span className="font-label-md text-label-md text-secondary uppercase tracking-widest font-bold">About Sunlit Power</span>
             <h2 className="font-display-lg text-display-lg text-on-surface leading-tight">Pioneering Clean Energy Solutions Since 2010</h2>
             <div className="space-y-4 font-body-md text-body-md text-on-surface-variant border-l-4 border-primary pl-6 py-2">
               <p>
-                Established over a decade ago, Arenq has grown to become a cornerstone in India's energy storage sector. We specialize in designing and manufacturing robust batteries that withstand the rigorous demands of various industries.
+                Established over a decade ago, Sunlit Power has grown to become a cornerstone in India's energy storage sector. We specialize in designing and manufacturing robust batteries that withstand the rigorous demands of various industries.
               </p>
               <p>
                 Our commitment to innovation is driven by a deep understanding of energy needs in emerging markets. We leverage advanced materials and engineering practices to ensure every unit delivers uncompromised reliability and superior lifecycle value.
@@ -549,7 +549,7 @@ export const Home = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-2xl font-variation-settings-[('FILL'_1)]">bolt</span>
-              <span className="font-headline-md text-primary font-bold">ARENQ</span>
+              <span className="font-headline-md text-primary font-bold">SUNLIT POWER</span>
             </div>
             <p className="font-body-md text-body-md text-on-surface-variant max-w-xs">
               Powering Every Journey with Reliable Energy. India's most trusted manufacturer of industrial battery solutions.
@@ -578,14 +578,14 @@ export const Home = () => {
               </li>
               <li className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-xl">mail</span>
-                <span>support@arenq.com</span>
+                <span>support@sunlitpower.in</span>
               </li>
             </ul>
           </div>
         </div>
         {/* Bottom Bar */}
         <div className="border-t border-outline-variant/50 px-container-padding py-4 text-center flex flex-col md:flex-row justify-between items-center max-w-[1440px] mx-auto">
-          <p className="font-caption text-caption text-on-surface-variant">© 2026 ARENQ PRIVATE LIMITED. All rights reserved.</p>
+          <p className="font-caption text-caption text-on-surface-variant">© 2024 SUNLIT POWER PRIVATE LIMITED. All rights reserved.</p>
           <div className="flex items-center gap-1 mt-2 md:mt-0 font-caption text-caption text-on-surface-variant">
             <span>Proudly Made in India</span>
             <span className="text-secondary text-lg">🇮🇳</span>

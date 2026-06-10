@@ -1,10 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 60" width="320" height="60">
-  <!-- Yellow/Amber Dotted Cross Icon (Arenq) -->
+  <!-- Golden Dotted Cross Icon -->
   <g fill="#e5a712">
-    <!-- Center (0,0) -->
     <circle cx="35" cy="30" r="4.8" />
-    
-    <!-- Level 1 (dist = 1) -->
     <circle cx="35" cy="21.5" r="4.0" />
     <circle cx="35" cy="38.5" r="4.0" />
     <circle cx="43.5" cy="30" r="4.0" />
@@ -13,8 +10,6 @@
     <circle cx="26.5" cy="21.5" r="4.0" />
     <circle cx="43.5" cy="38.5" r="4.0" />
     <circle cx="26.5" cy="38.5" r="4.0" />
-    
-    <!-- Level 2 (dist = 2) -->
     <circle cx="35" cy="13" r="3.0" />
     <circle cx="35" cy="47" r="3.0" />
     <circle cx="52" cy="30" r="3.0" />
@@ -27,17 +22,14 @@
     <circle cx="26.5" cy="13" r="3.0" />
     <circle cx="43.5" cy="47" r="3.0" />
     <circle cx="26.5" cy="47" r="3.0" />
-    
-    <!-- Level 3 (dist = 3 - outer tips) -->
     <circle cx="35" cy="4.5" r="1.8" />
     <circle cx="35" cy="55.5" r="1.8" />
     <circle cx="60.5" cy="30" r="1.8" />
     <circle cx="9.5" cy="30" r="1.8" />
   </g>
   
-  <!-- Arenq Blue Wordmark -->
-  <text x="76" y="37" font-family="'Inter', -apple-system, BlinkMacSystemFont, sans-serif" font-weight="900" font-style="italic" font-size="30" fill="#0d558d" letter-spacing="-0.5">ARENQ</text>
-  
-  <!-- Sub-caption -->
-  <text x="78" y="50" font-family="'Inter', -apple-system, BlinkMacSystemFont, sans-serif" font-weight="600" font-size="8.5" fill="#64748B" letter-spacing="1">SERVICE &amp; COMPLAINT PORTAL</text>
+  <!-- Sunlit Power Wordmark -->
+  <text x="76" y="32" font-family="'Inter', sans-serif" font-weight="800" font-size="20" fill="#1E3A8A" letter-spacing="0.5">SUNLIT</text>
+  <text x="153" y="32" font-family="'Inter', sans-serif" font-weight="800" font-size="20" fill="#F97316" letter-spacing="0.5">POWER</text>
+  <text x="76" y="47" font-family="'Inter', sans-serif" font-weight="600" font-size="8.5" fill="#64748B" letter-spacing="1">SERVICE &amp; COMPLAINT PORTAL</text>
 </svg>
