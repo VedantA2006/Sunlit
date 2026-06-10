@@ -53,7 +53,7 @@ export const CustomerDashboard = () => {
     try {
       const [compRes, batRes] = await Promise.all([
         api.get('/complaints/mine'),
-        api.get('/batteries/mine')
+        api.get('/batteries')
       ]);
       setComplaints(compRes.data);
       setBatteries(batRes.data);
@@ -193,7 +193,7 @@ export const CustomerDashboard = () => {
           {/* Brand */}
           <Link to="/" className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-3xl font-variation-settings-[('FILL'_1)]">bolt</span>
-            <span className="font-display-lg text-headline-md text-primary font-bold tracking-tight">SUNLIT</span>
+            <span className="font-display-lg text-headline-md text-primary font-bold tracking-tight">ARENQ</span>
           </Link>
 
           {/* Quick Info */}
