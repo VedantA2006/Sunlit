@@ -45,8 +45,8 @@ app.use(cors({
     if (allowedOrigins.indexOf(origin) !== -1) {
       return callback(null, true);
     }
-    console.log('[CORS DEBUG] Origin blocked by CORS policy.');
-    return callback(new Error('CORS Policy restriction'), false);
+    console.log('[CORS DEBUG] Origin not in whitelist.');
+    return callback(null, false);
   },
   credentials: true
 }));
