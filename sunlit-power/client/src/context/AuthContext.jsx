@@ -89,7 +89,9 @@ export const AuthProvider = ({ children }) => {
     // Attempt session restore on mount
     const storedUser = localStorage.getItem('sunlit_user');
     if (storedUser) {
-      refreshUser();
+      refreshUser().catch(() => {
+        // Silently handle — refreshUser already dispatches LOGOUT on failure
+      });
     } else {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
