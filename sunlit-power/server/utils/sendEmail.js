@@ -2,24 +2,42 @@ const nodemailer = require('nodemailer');
 
 const sendEmail = async ({ to, subject, html }) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.EMAIL_PORT || '587'),
-      secure: parseInt(process.env.EMAIL_PORT || '587') === 465,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
+    const resendKey = process.env.RESEND_API_KEY;
+    let transporter;
+    let fromEmail;
+
+    if (resendKey) {
+      transporter = nodemailer.createTransport({
+        host: 'smtp.resend.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: 'resend',
+          pass: resendKey
+        }
+      });
+      fromEmail = 'onboarding@resend.dev';
+    } else {
+      transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.EMAIL_PORT || '587'),
+        secure: parseInt(process.env.EMAIL_PORT || '587') === 465,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+      fromEmail = process.env.EMAIL_USER || 'support@sunlitpower.in';
+    }
 
     const mailOptions = {
-      from: `"Sunlit Power Support" <${process.env.EMAIL_USER || 'support@sunlitpower.in'}>`,
+      from: `"Sunlit Power Support" <${fromEmail}>`,
       to,
       subject,
       html
     };
 
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || process.env.EMAIL_USER === 'your_email@gmail.com') {
+    if (!resendKey && (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || process.env.EMAIL_USER === 'your_email@gmail.com')) {
       console.log(`\n============== MOCK EMAIL SENT ==============`);
       console.log(`To:      ${to}`);
       console.log(`Subject: ${subject}`);
