@@ -39,13 +39,16 @@ const allowedOrigins = process.env.CLIENT_URL
 
 app.use(cors({
   origin: function (origin, callback) {
-    console.log('[CORS DEBUG] Incoming request from origin:', origin);
-    console.log('[CORS DEBUG] Whitelisted origins:', allowedOrigins);
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    
+    // Auto-whitelist any Vercel domain and localhost ports
+    const isVercel = origin.endsWith('.vercel.app');
+    const isLocalHost = origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || isVercel || isLocalHost) {
       return callback(null, true);
     }
-    console.log('[CORS DEBUG] Origin not in whitelist.');
+    console.log('[CORS DEBUG] Origin not whitelisted:', origin);
     return callback(null, false);
   },
   credentials: true
