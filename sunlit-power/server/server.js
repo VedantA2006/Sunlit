@@ -39,10 +39,13 @@ const allowedOrigins = process.env.CLIENT_URL
 
 app.use(cors({
   origin: function (origin, callback) {
+    console.log('[CORS DEBUG] Incoming request from origin:', origin);
+    console.log('[CORS DEBUG] Whitelisted origins:', allowedOrigins);
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) !== -1) {
       return callback(null, true);
     }
+    console.log('[CORS DEBUG] Origin blocked by CORS policy.');
     return callback(new Error('CORS Policy restriction'), false);
   },
   credentials: true
