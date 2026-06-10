@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans bg-slate-50 text-slate-800;
+  }
+}
+
+/* Timeline sequences animation */
+.timeline-node {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: slideInUp 0.4s ease-out forwards;
+}
+
+@keyframes slideInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Floating SVG battery animations */
+@keyframes fillBattery {
+  0% { height: 0%; }
+  100% { height: 100%; }
+}
+
+.battery-bar-1 { animation: fillBattery 1.5s ease-in-out infinite alternate; }
+.battery-bar-2 { animation: fillBattery 1.5s ease-in-out infinite alternate; animation-delay: 0.2s; }
+.battery-bar-3 { animation: fillBattery 1.5s ease-in-out infinite alternate; animation-delay: 0.4s; }
+.battery-bar-4 { animation: fillBattery 1.5s ease-in-out infinite alternate; animation-delay: 0.6s; }
