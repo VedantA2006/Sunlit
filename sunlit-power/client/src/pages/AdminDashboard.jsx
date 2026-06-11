@@ -162,7 +162,7 @@ export const AdminDashboard = () => {
       isOpen: true,
       complaintId: id,
       complaintTextId: textId,
-      technicianId: technicians[0]?.userId?._id || ''
+      technicianId: technicians[0]?._id || ''
     });
   };
 
@@ -673,8 +673,8 @@ export const AdminDashboard = () => {
                     className="w-full px-3 py-2 rounded-xl border border-outline-variant focus:outline-none focus:ring-1 focus:ring-primary text-xs font-medium text-on-surface bg-surface-container-low"
                   >
                     {technicians.map(t => (
-                      <option key={t._id} value={t.userId?._id}>
-                        {t.userId?.name} ({t.userId?.phone})
+                      <option key={t._id} value={t._id}>
+                        {t.name} ({t.phone})
                       </option>
                     ))}
                   </select>
