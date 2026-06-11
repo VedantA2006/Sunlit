@@ -279,8 +279,45 @@ export const ComplaintDetails = () => {
                   <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                   <span>Purchased: {new Date(complaint.batteryId?.purchaseDate).toLocaleDateString('en-IN')}</span>
                 </div>
-                <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-lg border border-green-100 text-xxs font-semibold">
-                  <Shield className="w-3.5 h-3.5" /> {complaint.batteryId?.warrantyYears} Years Manufacturer Warranty
+                <div className="space-y-1 bg-green-50 text-green-700 px-3 py-2.5 rounded-lg border border-green-100 text-[10px] font-semibold flex flex-col items-start w-full">
+                  <div className="flex items-center gap-2 text-xxs">
+                    <Shield className="w-3.5 h-3.5 shrink-0" /> 
+                    <span>{complaint.batteryId?.warrantyYears} Years Manufacturer Warranty</span>
+                  </div>
+                  {(() => {
+                    if (!complaint.batteryId?.purchaseDate) return null;
+                    const purchaseDate = new Date(complaint.batteryId.purchaseDate);
+                    const expiryDate = new Date(purchaseDate.getFullYear() + (complaint.batteryId.warrantyYears || 2), purchaseDate.getMonth(), purchaseDate.getDate());
+                    const today = new Date();
+                    const expired = today > expiryDate;
+                    
+                    let timeLeftStr = '';
+                    if (!expired) {
+                      const diffTime = expiryDate.getTime() - today.getTime();
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      const years = Math.floor(diffDays / 365);
+                      const remainingDays = diffDays % 365;
+                      const months = Math.floor(remainingDays / 30);
+                      const days = remainingDays % 30;
+                      
+                      if (years > 0) timeLeftStr += `${years} Yr${years > 1 ? 's' : ''} `;
+                      if (months > 0) timeLeftStr += `${months} Mo${months > 1 ? 's' : ''} `;
+                      if (years === 0 && days > 0) timeLeftStr += `${days} Day${days > 1 ? 's' : ''}`;
+                      if (timeLeftStr.trim() === '') timeLeftStr = 'Expires today';
+                      else timeLeftStr = timeLeftStr.trim() + ' left';
+                    } else {
+                      timeLeftStr = 'Expired';
+                    }
+                    
+                    return (
+                      <div className="mt-1 border-t border-green-200/50 pt-1 w-full text-[10px] space-y-0.5">
+                        <div className="text-slate-500 font-medium">Expires: {expiryDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                        <div className={`font-bold uppercase tracking-wider text-[9px] ${expired ? 'text-red-600' : 'text-green-700'}`}>
+                          Status: {expired ? 'Expired' : `Active (${timeLeftStr})`}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>

@@ -6,7 +6,6 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { generateAccessToken, generateRefreshToken } = require('../utils/generateTokens');
 const sendEmail = require('../utils/sendEmail');
-const { welcomeEmail, passwordResetEmail } = require('../utils/emailTemplates');
 
 const setRefreshTokenCookie = (res, token) => {
   const isProd = process.env.NODE_ENV === 'production';
@@ -82,12 +81,6 @@ exports.register = async (req, res) => {
     await user.save();
 
     setRefreshTokenCookie(res, refreshToken);
-
-    // Send welcome email
-    const emailData = welcomeEmail({ name: user.name, email: user.email, role: user.role });
-    sendEmail({ to: user.email, subject: emailData.subject, html: emailData.html }).catch(err => {
-      console.error('Failed to send welcome email:', err.message);
-    });
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -250,8 +243,19 @@ exports.forgotPassword = async (req, res) => {
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const resetLink = `${clientUrl}/reset-password/${resetToken}`;
 
-    const emailData = passwordResetEmail({ name: user.name, resetLink });
-    await sendEmail({ to: user.email, subject: emailData.subject, html: emailData.html });
+    const mailHtml = `
+      <h3>Sunlit Power Pvt Ltd - Password Reset Request</h3>
+      <p>Hello ${user.name},</p>
+      <p>You requested a password reset. Click the link below to reset your password within the next hour:</p>
+      <a href="${resetLink}" target="_blank">${resetLink}</a>
+      <p>If you did not request this, please ignore this email.</p>
+    `;
+
+    await sendEmail({
+      to: user.email,
+      subject: 'Sunlit Power Pvt Ltd - Reset Password',
+      html: mailHtml
+    });
 
     res.status(200).json({ message: 'Reset link sent to your email' });
   } catch (error) {

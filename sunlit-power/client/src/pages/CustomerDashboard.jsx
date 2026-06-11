@@ -5,6 +5,55 @@ import useAuth from '../hooks/useAuth';
 import SlaBadge from '../components/SlaBadge';
 import { formatDateOnly } from '../utils/formatDate';
 
+// Calculate details of the warranty status and time left
+const calculateWarrantyDetails = (purchaseDateStr, warrantyYears) => {
+  if (!purchaseDateStr) return { status: 'Unknown', timeLeft: 'N/A', expiryDate: null, expired: false };
+  const purchaseDate = new Date(purchaseDateStr);
+  const expiryDate = new Date(purchaseDate.getFullYear() + warrantyYears, purchaseDate.getMonth(), purchaseDate.getDate());
+  const today = new Date();
+  
+  if (today > expiryDate) {
+    return {
+      status: 'Expired',
+      timeLeft: 'Expired',
+      expiryDate,
+      expired: true
+    };
+  }
+  
+  const diffTime = expiryDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  const years = Math.floor(diffDays / 365);
+  const remainingDays = diffDays % 365;
+  const months = Math.floor(remainingDays / 30);
+  const days = remainingDays % 30;
+  
+  let timeLeftStr = '';
+  if (years > 0) {
+    timeLeftStr += `${years} Year${years > 1 ? 's' : ''} `;
+  }
+  if (months > 0) {
+    timeLeftStr += `${months} Month${months > 1 ? 's' : ''} `;
+  }
+  if (years === 0 && days > 0) {
+    timeLeftStr += `${days} Day${days > 1 ? 's' : ''}`;
+  }
+  
+  if (timeLeftStr.trim() === '') {
+    timeLeftStr = 'Expires today';
+  } else {
+    timeLeftStr = timeLeftStr.trim() + ' left';
+  }
+  
+  return {
+    status: 'Active',
+    timeLeft: timeLeftStr,
+    expiryDate,
+    expired: false
+  };
+};
+
 export const CustomerDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -29,6 +78,7 @@ export const CustomerDashboard = () => {
     dealerName: '',
     warrantyYears: 3
   });
+  const [batteryInvoiceFile, setBatteryInvoiceFile] = useState(null);
 
   const [complaintForm, setComplaintForm] = useState({
     batteryId: '',
@@ -37,6 +87,10 @@ export const CustomerDashboard = () => {
     priority: 'Medium'
   });
   const [uploadedFiles, setUploadedFiles] = useState([]);
+
+  // Battery Modal state & Complaint filters
+  const [selectedBattery, setSelectedBattery] = useState(null);
+  const [complaintFilter, setComplaintFilter] = useState('all'); // 'all', 'active', 'resolved'
 
   // Feedback modal state
   const [feedbackModal, setFeedbackModal] = useState({
@@ -79,7 +133,21 @@ export const CustomerDashboard = () => {
     setError('');
     setSuccess('');
     try {
-      await api.post('/batteries', batteryForm);
+      const formData = new FormData();
+      formData.append('serialNumber', batteryForm.serialNumber);
+      formData.append('model', batteryForm.model);
+      formData.append('purchaseDate', batteryForm.purchaseDate);
+      formData.append('dealerName', batteryForm.dealerName);
+      formData.append('warrantyYears', batteryForm.warrantyYears);
+      if (batteryInvoiceFile) {
+        formData.append('invoiceImage', batteryInvoiceFile);
+      }
+
+      await api.post('/batteries', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       setSuccess('Battery warranty registered successfully!');
       setBatteryForm({
         serialNumber: '',
@@ -88,6 +156,9 @@ export const CustomerDashboard = () => {
         dealerName: '',
         warrantyYears: 3
       });
+      setBatteryInvoiceFile(null);
+      const fileInput = document.getElementById('battery-invoice-file');
+      if (fileInput) fileInput.value = '';
       await fetchDashboardData();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to register battery.');
@@ -184,6 +255,16 @@ export const CustomerDashboard = () => {
   const totalRaised = complaints.length;
   const activeCount = complaints.filter(c => c.status !== 'Resolved' && c.status !== 'Closed').length;
   const resolvedCount = complaints.filter(c => c.status === 'Resolved' || c.status === 'Closed').length;
+
+  const filteredComplaints = complaints.filter(comp => {
+    if (complaintFilter === 'active') {
+      return comp.status !== 'Resolved' && comp.status !== 'Closed';
+    }
+    if (complaintFilter === 'resolved') {
+      return comp.status === 'Resolved' || comp.status === 'Closed';
+    }
+    return true; // 'all'
+  });
 
   return (
     <div className="bg-background text-on-background font-body-md antialiased overflow-x-hidden min-h-screen flex">
@@ -413,21 +494,68 @@ export const CustomerDashboard = () => {
             </div>
 
             {/* Right Column: Active complaints list */}
-            <div className="lg:col-span-8 space-y-4">
-              <h3 className="font-headline-md text-headline-md text-on-surface">Your Active Support Tickets</h3>
+            <div className="lg:col-span-8 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline-variant pb-4">
+                <h3 className="font-headline-md text-headline-md text-on-surface">
+                  {complaintFilter === 'all' ? 'All Support Tickets' :
+                   complaintFilter === 'active' ? 'Active Support Tickets' :
+                   'Resolved & Closed History'}
+                </h3>
+                
+                {/* Filter Tabs */}
+                <div className="flex bg-surface-container-high p-1 rounded-xl gap-1 self-start">
+                  <button
+                    type="button"
+                    onClick={() => setComplaintFilter('all')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      complaintFilter === 'all'
+                        ? 'bg-surface text-primary shadow-sm'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    All ({complaints.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setComplaintFilter('active')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      complaintFilter === 'active'
+                        ? 'bg-surface text-primary shadow-sm'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    Active ({complaints.filter(c => c.status !== 'Resolved' && c.status !== 'Closed').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setComplaintFilter('resolved')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      complaintFilter === 'resolved'
+                        ? 'bg-surface text-primary shadow-sm'
+                        : 'text-on-surface-variant hover:text-on-surface'
+                    }`}
+                  >
+                    Resolved ({complaints.filter(c => c.status === 'Resolved' || c.status === 'Closed').length})
+                  </button>
+                </div>
+              </div>
               
               {isLoading ? (
                 <div className="py-20 flex justify-center items-center">
                   <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
-              ) : complaints.length === 0 ? (
+              ) : filteredComplaints.length === 0 ? (
                 <div className="bg-surface border border-outline-variant rounded-2xl p-12 text-center text-outline-variant">
                   <span className="material-symbols-outlined text-5xl mb-2 opacity-50 text-outline">info</span>
-                  <p className="text-sm font-semibold">You have not raised any service complaints yet.</p>
+                  <p className="text-sm font-semibold">
+                    {complaintFilter === 'all' ? 'You have not raised any service complaints yet.' :
+                     complaintFilter === 'active' ? 'You do not have any active support tickets.' :
+                     'You do not have any resolved or closed support tickets yet.'}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {complaints.map(comp => (
+                  {filteredComplaints.map(comp => (
                     <div
                       key={comp._id}
                       className="bg-surface border border-outline-variant rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left"
@@ -574,6 +702,24 @@ export const CustomerDashboard = () => {
                   </select>
                 </div>
 
+                <div>
+                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1 cursor-pointer flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">receipt_long</span> Upload Invoice Image (Optional)
+                  </label>
+                  <input
+                    id="battery-invoice-file"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setBatteryInvoiceFile(e.target.files[0])}
+                    className="w-full text-xs text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-surface-container-high file:text-on-surface hover:file:bg-outline-variant/50"
+                  />
+                  {batteryInvoiceFile && (
+                    <div className="text-[10px] text-primary mt-1 font-semibold">
+                      Selected: {batteryInvoiceFile.name}
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="submit"
                   disabled={btnLoading}
@@ -599,33 +745,72 @@ export const CustomerDashboard = () => {
                 </div>
               ) : (
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {batteries.map(b => (
-                    <div
-                      key={b._id}
-                      className="bg-surface border border-outline-variant rounded-2xl p-5 shadow-sm flex items-start gap-4 hover:shadow-md transition-shadow relative overflow-hidden text-left"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-primary-fixed/30 text-primary flex items-center justify-center shrink-0 border border-outline-variant">
-                        <span className="material-symbols-outlined text-2xl font-variation-settings-[('FILL'_1)]">battery_charging_full</span>
-                      </div>
-                      
-                      <div className="space-y-1.5 min-w-0">
-                        <h4 className="font-bold text-on-surface text-sm truncate">{b.model} Battery</h4>
-                        <div className="text-xxs font-mono text-on-surface-variant uppercase">
-                          S/N: {b.serialNumber}
-                        </div>
-                        <div className="text-xxs text-outline">
-                          Purchased: {formatDateOnly(b.purchaseDate)}
-                        </div>
-                        <div className="text-xxs text-outline">
-                          Dealer: {b.dealerName}
-                        </div>
+                  {batteries.map(b => {
+                    const warranty = calculateWarrantyDetails(b.purchaseDate, b.warrantyYears);
+                    return (
+                      <div
+                        key={b._id}
+                        className="bg-surface border border-outline-variant rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden text-left"
+                      >
+                        {/* Status bar */}
+                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${warranty.expired ? 'bg-error' : 'bg-green-500'}`} />
                         
-                        <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-0.5 rounded text-xxs font-semibold mt-2 border border-green-100">
-                          <span className="material-symbols-outlined text-xs">verified_user</span> {b.warrantyYears} Years Warranty
-                        </span>
+                        <div className="flex items-start gap-4 mb-4">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-outline-variant ${
+                            warranty.expired ? 'bg-error-container/30 text-error' : 'bg-primary-fixed/30 text-primary'
+                          }`}>
+                            <span className="material-symbols-outlined text-2xl font-variation-settings-[('FILL'_1)]">
+                              {warranty.expired ? 'battery_alert' : 'battery_charging_full'}
+                            </span>
+                          </div>
+                          
+                          <div className="space-y-1 min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <h4 className="font-bold text-on-surface text-sm truncate">{b.model} Battery</h4>
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                warranty.expired ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-green-50 text-green-700 border border-green-100'
+                              }`}>
+                                {warranty.expired ? 'Expired' : 'Active'}
+                              </span>
+                            </div>
+                            <div className="text-xxs font-mono text-on-surface-variant uppercase">
+                              S/N: {b.serialNumber}
+                            </div>
+                            <div className="text-xxs text-outline">
+                              Purchased: {formatDateOnly(b.purchaseDate)}
+                            </div>
+                            <div className="text-xxs text-outline">
+                              Dealer: {b.dealerName}
+                            </div>
+                            <div className="text-xxs font-semibold text-primary mt-1 flex items-center gap-1">
+                              <span className="material-symbols-outlined text-xs">shield</span>
+                              {b.warrantyYears} Years ({warranty.timeLeft})
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 border-t border-outline-variant/30 pt-3 mt-1">
+                          {b.invoiceImage ? (
+                            <span className="text-[10px] text-green-600 font-semibold flex items-center gap-0.5">
+                              <span className="material-symbols-outlined text-xs">receipt_long</span> Invoice Attached
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-outline font-medium flex items-center gap-0.5">
+                              <span className="material-symbols-outlined text-xs flex">receipt_long</span> No Invoice
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedBattery(b)}
+                            className="px-3 py-1 bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold rounded-lg transition-colors flex items-center gap-1"
+                          >
+                            View Details & History
+                            <span className="material-symbols-outlined text-xs">chevron_right</span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -719,6 +904,198 @@ export const CustomerDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Battery Details & History Modal */}
+      {selectedBattery && (() => {
+        const freshBattery = batteries.find(b => b._id === selectedBattery._id) || selectedBattery;
+        const warranty = calculateWarrantyDetails(freshBattery.purchaseDate, freshBattery.warrantyYears);
+        const batteryComplaints = complaints.filter(c => 
+          (c.batteryId?._id && c.batteryId._id === freshBattery._id) || 
+          (c.batteryId && c.batteryId === freshBattery._id)
+        );
+        const imageBaseUrl = import.meta.env.VITE_IMAGE_BASE_URL || 'http://localhost:5000/uploads';
+
+        return (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl p-6 border border-outline-variant relative text-left flex flex-col max-h-[90vh]">
+              {/* Header */}
+              <div className="flex justify-between items-center border-b border-outline-variant pb-4 mb-4">
+                <div>
+                  <h3 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary font-variation-settings-[('FILL'_1)]">battery_charging_full</span>
+                    {freshBattery.model} Battery Details
+                  </h3>
+                  <p className="text-xs font-mono text-outline uppercase mt-0.5">Serial Number: {freshBattery.serialNumber}</p>
+                </div>
+                <button
+                  onClick={() => setSelectedBattery(null)}
+                  className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-on-surface-variant transition-colors"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 overflow-y-auto flex-1 pr-1.5">
+                {/* Left side - Battery Info & Invoice */}
+                <div className="md:col-span-5 space-y-4">
+                  <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4 space-y-3">
+                    <h4 className="font-bold text-xs text-primary uppercase tracking-wider">Product Info</h4>
+                    
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-outline block mb-0.5">Model</span>
+                        <span className="font-semibold text-on-surface">{freshBattery.model}</span>
+                      </div>
+                      <div>
+                        <span className="text-outline block mb-0.5">Warranty Duration</span>
+                        <span className="font-semibold text-on-surface">{freshBattery.warrantyYears} Years</span>
+                      </div>
+                      <div>
+                        <span className="text-outline block mb-0.5">Purchase Date</span>
+                        <span className="font-semibold text-on-surface">{formatDateOnly(freshBattery.purchaseDate)}</span>
+                      </div>
+                      <div>
+                        <span className="text-outline block mb-0.5">Registered Date</span>
+                        <span className="font-semibold text-on-surface">{formatDateOnly(freshBattery.registeredAt)}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-outline block mb-0.5">Dealer / Distributor</span>
+                        <span className="font-semibold text-on-surface">{freshBattery.dealerName || 'N/A'}</span>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-outline-variant/30 pt-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-outline font-medium">Warranty Status:</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          warranty.expired ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-green-50 text-green-700 border border-green-100'
+                        }`}>
+                          {warranty.status}
+                        </span>
+                      </div>
+                      <div className="text-xs font-semibold text-on-surface mt-1.5 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm text-primary">calendar_today</span>
+                        <span>Expires on: {formatDateOnly(warranty.expiryDate)}</span>
+                      </div>
+                      <div className={`text-xs font-bold mt-1 flex items-center gap-1 ${warranty.expired ? 'text-error' : 'text-green-600'}`}>
+                        <span className="material-symbols-outlined text-sm">{warranty.expired ? 'info' : 'hourglass_bottom'}</span>
+                        <span>{warranty.timeLeft}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Invoice Image Preview */}
+                  <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4">
+                    <h4 className="font-bold text-xs text-primary uppercase tracking-wider mb-2">Invoice Document</h4>
+                    {freshBattery.invoiceImage ? (
+                      <div className="space-y-2">
+                        <a
+                          href={`${imageBaseUrl}/${freshBattery.invoiceImage}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="group relative aspect-video bg-slate-100 border border-outline-variant rounded-lg overflow-hidden shadow-sm hover:shadow transition-shadow block"
+                        >
+                          <img
+                            src={`${imageBaseUrl}/${freshBattery.invoiceImage}`}
+                            alt="Invoice"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
+                          <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span className="text-white text-xs font-bold flex items-center gap-1">
+                              <span className="material-symbols-outlined text-sm">open_in_new</span> View Full Size
+                            </span>
+                          </div>
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-outline bg-surface rounded-lg border border-dashed border-outline-variant text-xs">
+                        <span className="material-symbols-outlined text-2xl opacity-50 block mb-1">receipt_long</span>
+                        No invoice uploaded during registration.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right side - Complaint History for this battery */}
+                <div className="md:col-span-7 flex flex-col min-h-0">
+                  <h4 className="font-bold text-xs text-primary uppercase tracking-wider mb-3 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm font-variation-settings-[('FILL'_1)]">assignment</span>
+                    Service History ({batteryComplaints.length})
+                  </h4>
+
+                  {batteryComplaints.length === 0 ? (
+                    <div className="bg-surface border border-outline-variant border-dashed rounded-xl p-8 text-center text-outline flex-1 flex flex-col items-center justify-center">
+                      <span className="material-symbols-outlined text-3xl mb-1 opacity-50">check_circle</span>
+                      <p className="text-xs font-semibold">No complaints registered for this product.</p>
+                      <p className="text-[10px] text-outline mt-0.5">Everything is operating normally.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 overflow-y-auto flex-1 pr-1.5 max-h-[350px]">
+                      {batteryComplaints.map(comp => (
+                        <div
+                          key={comp._id}
+                          className="bg-surface border border-outline-variant rounded-xl p-4 hover:shadow-sm transition-shadow relative text-left"
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <span className="text-xs font-extrabold text-on-surface">{comp.complaintId}</span>
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+                              comp.status === 'Submitted' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                              comp.status === 'Assigned' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
+                              comp.status === 'In Progress' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                              comp.status === 'Resolved' ? 'bg-green-50 text-green-700 border border-green-100' :
+                              'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}>
+                              {comp.status}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-xxs mb-2 text-outline-variant border-b border-outline-variant/20 pb-2">
+                            <div>
+                              <span className="text-outline font-semibold block">Problem</span>
+                              <span className="text-on-surface font-semibold">{comp.type}</span>
+                            </div>
+                            <div>
+                              <span className="text-outline font-semibold block">Date Raised</span>
+                              <span className="text-on-surface font-semibold">{formatDateOnly(comp.createdAt)}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-3 mt-1.5">
+                            <p className="text-xxs text-on-surface-variant line-clamp-1 flex-1 font-semibold">
+                              {comp.description}
+                            </p>
+                            <button
+                              onClick={() => {
+                                setSelectedBattery(null);
+                                navigate(`/complaints/${comp._id}`);
+                              }}
+                              className="px-2.5 py-1 bg-surface-container-high text-on-surface text-[10px] font-bold rounded hover:bg-outline-variant/30 transition-colors shrink-0"
+                            >
+                              View Ticket
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="border-t border-outline-variant/30 pt-4 mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setSelectedBattery(null)}
+                  className="px-4 py-2 bg-surface-container-high hover:bg-outline-variant/35 text-on-surface text-xs font-bold rounded-xl transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

@@ -3,17 +3,6 @@ const Battery = require('../models/Battery');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { getSlaHours } = require('../utils/slaCalculator');
-const sendEmail = require('../utils/sendEmail');
-const {
-  complaintRaisedCustomerEmail,
-  complaintRaisedAdminEmail,
-  technicianAssignedEmail,
-  technicianAssignedCustomerEmail,
-  statusUpdateEmail,
-  complaintResolvedEmail,
-  priorityEscalatedEmail,
-  complaintClosedEmail,
-} = require('../utils/emailTemplates');
 
 // Helper to auto-generate Complaint ID: CMP-YYYYMMDD-XXXX
 const generateComplaintId = async () => {
@@ -95,7 +84,6 @@ exports.raiseComplaint = async (req, res) => {
 
     // Notify Admins
     const admins = await User.find({ role: 'admin', isActive: true }).lean();
-    const customer = await User.findById(customerId).lean();
     for (const admin of admins) {
       await createNotification(
         admin._id,
@@ -103,32 +91,7 @@ exports.raiseComplaint = async (req, res) => {
         `A new complaint ${complaintId} has been raised by ${req.user.email}.`,
         'complaint_created'
       );
-      // Email to admin
-      const adminEmailData = complaintRaisedAdminEmail({
-        adminName: admin.name,
-        complaintId,
-        customerName: customer?.name || 'Customer',
-        customerEmail: req.user.email,
-        type,
-        priority: complaintPriority
-      });
-      sendEmail({ to: admin.email, subject: adminEmailData.subject, html: adminEmailData.html }).catch(err => {
-        console.error(`Failed to send complaint email to admin ${admin.email}:`, err.message);
-      });
     }
-
-    // Email to customer
-    const customerEmailData = complaintRaisedCustomerEmail({
-      name: customer?.name || 'Customer',
-      complaintId,
-      type,
-      priority: complaintPriority,
-      batteryModel: battery.model,
-      description
-    });
-    sendEmail({ to: customer?.email || req.user.email, subject: customerEmailData.subject, html: customerEmailData.html }).catch(err => {
-      console.error('Failed to send complaint confirmation email:', err.message);
-    });
 
     res.status(201).json({ message: 'Complaint registered successfully', complaint });
   } catch (error) {
@@ -272,34 +235,6 @@ exports.assignTechnician = async (req, res) => {
       'complaint_assigned'
     );
 
-    // Email to technician
-    const customer = await User.findById(complaint.customerId).lean();
-    const techEmailData = technicianAssignedEmail({
-      techName: technician.name,
-      complaintId: complaint.complaintId,
-      customerName: customer?.name || 'Customer',
-      customerPhone: customer?.phone,
-      customerAddress: customer?.address,
-      type: complaint.type,
-      priority: complaint.priority
-    });
-    sendEmail({ to: technician.email, subject: techEmailData.subject, html: techEmailData.html }).catch(err => {
-      console.error('Failed to send technician assignment email:', err.message);
-    });
-
-    // Email to customer
-    if (customer?.email) {
-      const custEmailData = technicianAssignedCustomerEmail({
-        customerName: customer.name,
-        complaintId: complaint.complaintId,
-        techName: technician.name,
-        techPhone: technician.phone
-      });
-      sendEmail({ to: customer.email, subject: custEmailData.subject, html: custEmailData.html }).catch(err => {
-        console.error('Failed to send customer assignment email:', err.message);
-      });
-    }
-
     res.status(200).json({ message: 'Technician assigned successfully', complaint });
   } catch (error) {
     res.status(500).json({ message: 'Failed to assign technician', error: error.message });
@@ -354,20 +289,6 @@ exports.updateStatus = async (req, res) => {
       'status_updated'
     );
 
-    // Email to customer
-    const customer = await User.findById(complaint.customerId).lean();
-    if (customer?.email) {
-      const emailData = statusUpdateEmail({
-        customerName: customer.name,
-        complaintId: complaint.complaintId,
-        newStatus: status,
-        note: note || `Status updated to ${status}`
-      });
-      sendEmail({ to: customer.email, subject: emailData.subject, html: emailData.html }).catch(err => {
-        console.error('Failed to send status update email:', err.message);
-      });
-    }
-
     if (status === 'Resolved') {
       await createNotification(
         complaint.customerId,
@@ -375,17 +296,6 @@ exports.updateStatus = async (req, res) => {
         `Complaint ${complaint.complaintId} is resolved. Please take a moment to rate our service.`,
         'feedback_request'
       );
-
-      // Send resolved email with feedback request
-      if (customer?.email) {
-        const resolvedData = complaintResolvedEmail({
-          customerName: customer.name,
-          complaintId: complaint.complaintId
-        });
-        sendEmail({ to: customer.email, subject: resolvedData.subject, html: resolvedData.html }).catch(err => {
-          console.error('Failed to send resolved email:', err.message);
-        });
-      }
     }
 
     res.status(200).json({ message: 'Status updated successfully', complaint });
@@ -430,19 +340,6 @@ exports.escalateComplaint = async (req, res) => {
         'status_updated'
       );
 
-      // Email to customer
-      const customer = await User.findById(complaint.customerId).lean();
-      if (customer?.email) {
-        const emailData = priorityEscalatedEmail({
-          customerName: customer.name,
-          complaintId: complaint.complaintId,
-          newPriority: complaint.priority
-        });
-        sendEmail({ to: customer.email, subject: emailData.subject, html: emailData.html }).catch(err => {
-          console.error('Failed to send escalation email:', err.message);
-        });
-      }
-
       res.status(200).json({ message: `Complaint escalated to ${complaint.priority}`, complaint });
     } else {
       res.status(400).json({ message: 'Complaint is already at Critical priority' });
@@ -478,18 +375,6 @@ exports.closeComplaint = async (req, res) => {
       `Your complaint ${complaint.complaintId} has been successfully closed.`,
       'status_updated'
     );
-
-    // Email to customer
-    const customer = await User.findById(complaint.customerId).lean();
-    if (customer?.email) {
-      const emailData = complaintClosedEmail({
-        customerName: customer.name,
-        complaintId: complaint.complaintId
-      });
-      sendEmail({ to: customer.email, subject: emailData.subject, html: emailData.html }).catch(err => {
-        console.error('Failed to send closed email:', err.message);
-      });
-    }
 
     res.status(200).json({ message: 'Complaint closed successfully', complaint });
   } catch (error) {

@@ -1,8 +1,5 @@
 const Feedback = require('../models/Feedback');
 const Complaint = require('../models/Complaint');
-const User = require('../models/User');
-const sendEmail = require('../utils/sendEmail');
-const { feedbackReceivedEmail } = require('../utils/emailTemplates');
 
 exports.submitFeedback = async (req, res) => {
   try {
@@ -36,20 +33,6 @@ exports.submitFeedback = async (req, res) => {
     });
 
     await feedback.save();
-
-    // Send feedback confirmation email
-    const customer = await User.findById(customerId).lean();
-    if (customer?.email) {
-      const emailData = feedbackReceivedEmail({
-        customerName: customer.name,
-        complaintId: complaint.complaintId,
-        serviceRating: parseInt(serviceRating),
-        techRating: parseInt(techRating)
-      });
-      sendEmail({ to: customer.email, subject: emailData.subject, html: emailData.html }).catch(err => {
-        console.error('Failed to send feedback confirmation email:', err.message);
-      });
-    }
 
     res.status(201).json({ message: 'Feedback submitted successfully', feedback });
   } catch (error) {
