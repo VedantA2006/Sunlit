@@ -3,6 +3,37 @@ const nodemailer = require('nodemailer');
 const sendEmail = async ({ to, subject, html }) => {
   try {
     const resendKey = process.env.RESEND_API_KEY;
+    const brevoApiKey = process.env.BREVO_API_KEY;
+
+    // 1. If Brevo API Key is configured, use Brevo HTTP REST API (port 443 - never blocked by Render)
+    if (brevoApiKey) {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': brevoApiKey,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          sender: {
+            name: 'Sunlit Power Pvt Ltd',
+            email: process.env.EMAIL_FROM || 'geminivedant5@gmail.com'
+          },
+          to: [{ email: to }],
+          subject: subject,
+          htmlContent: html
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        console.log(`Email sent successfully via Brevo API: ${data.messageId || 'Success'}`);
+        return true;
+      } else {
+        throw new Error(data.message || JSON.stringify(data));
+      }
+    }
+
     let transporter;
     let fromEmail;
 
