@@ -27,7 +27,7 @@ const sendEmail = async ({ to, subject, html }) => {
           pass: process.env.EMAIL_PASS
         }
       });
-      fromEmail = process.env.EMAIL_USER || 'info@arenq.co.in';
+      fromEmail = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'info@arenq.co.in';
     }
 
     const mailOptions = {
