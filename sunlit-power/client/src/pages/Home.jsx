@@ -48,7 +48,7 @@ export const Home = () => {
           {/* Brand */}
           <Link to="/" className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-3xl font-variation-settings-[('FILL'_1)]">bolt</span>
-            <span className="font-display-lg text-headline-md text-primary font-bold tracking-tight">SUNLIT POWER</span>
+            <span className="font-display-lg text-headline-md text-primary font-bold tracking-tight">SUNLIT POWER PVT LTD</span>
           </Link>
           {/* Navigation Links (Desktop) */}
           <div className="hidden md:flex items-center gap-8">
@@ -549,11 +549,19 @@ export const Home = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-2xl font-variation-settings-[('FILL'_1)]">bolt</span>
-              <span className="font-headline-md text-primary font-bold">SUNLIT POWER</span>
+              <span className="font-headline-md text-primary font-bold">SUNLIT POWER PVT LTD</span>
             </div>
             <p className="font-body-md text-body-md text-on-surface-variant max-w-xs">
               Powering Every Journey with Reliable Energy. India's most trusted manufacturer of industrial battery solutions.
             </p>
+            <div className="flex items-center gap-2 text-on-surface-variant font-body-md text-body-md mt-2">
+              <span className="material-symbols-outlined text-primary text-lg">call</span>
+              <a href="tel:+918956225134" className="hover:text-primary transition-colors">+91 89562 25134</a>
+            </div>
+            <div className="flex items-center gap-2 text-on-surface-variant font-body-md text-body-md">
+              <span className="material-symbols-outlined text-primary text-lg">mail</span>
+              <a href="mailto:info@arenq.co.in" className="hover:text-primary transition-colors">info@arenq.co.in</a>
+            </div>
           </div>
           {/* Quick Links */}
           <div>
@@ -570,22 +578,22 @@ export const Home = () => {
             <ul className="space-y-3 font-body-md text-body-md text-on-surface-variant">
               <li className="flex items-start gap-2">
                 <span className="material-symbols-outlined text-primary text-xl">location_on</span>
-                <span>Plot No 45, Industrial Area Phase 2, New Delhi, 110020</span>
+                <span>Sunlit Power Pvt Ltd, Laxmi Avenue, Commercial Building - B, Office No. B-503&504, Near Edenn Tower, Wakad, Pune, Maharashtra - 411057, India</span>
               </li>
               <li className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-xl">call</span>
-                <span>+91 1800-123-4567</span>
+                <a href="tel:+918956225134" className="hover:text-primary transition-colors">+91 89562 25134</a>
               </li>
               <li className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-xl">mail</span>
-                <span>support@sunlitpower.in</span>
+                <a href="mailto:info@arenq.co.in" className="hover:text-primary transition-colors">info@arenq.co.in</a>
               </li>
             </ul>
           </div>
         </div>
         {/* Bottom Bar */}
         <div className="border-t border-outline-variant/50 px-container-padding py-4 text-center flex flex-col md:flex-row justify-between items-center max-w-[1440px] mx-auto">
-          <p className="font-caption text-caption text-on-surface-variant">© 2024 SUNLIT POWER PRIVATE LIMITED. All rights reserved.</p>
+          <p className="font-caption text-caption text-on-surface-variant">© {new Date().getFullYear()} SUNLIT POWER PVT LTD. All rights reserved.</p>
           <div className="flex items-center gap-1 mt-2 md:mt-0 font-caption text-caption text-on-surface-variant">
             <span>Proudly Made in India</span>
             <span className="text-secondary text-lg">🇮🇳</span>

@@ -62,7 +62,7 @@ export const Login = () => {
           <div className="text-center">
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Portal Sign In</h1>
             <p className="text-sm text-slate-500 mt-1.5">
-              Access your Sunlit Power support dashboard
+              Access your Sunlit Power Pvt Ltd support dashboard
             </p>
           </div>
 

@@ -244,7 +244,7 @@ exports.forgotPassword = async (req, res) => {
     const resetLink = `${clientUrl}/reset-password/${resetToken}`;
 
     const mailHtml = `
-      <h3>Sunlit Power Password Reset Request</h3>
+      <h3>Sunlit Power Pvt Ltd - Password Reset Request</h3>
       <p>Hello ${user.name},</p>
       <p>You requested a password reset. Click the link below to reset your password within the next hour:</p>
       <a href="${resetLink}" target="_blank">${resetLink}</a>
@@ -253,7 +253,7 @@ exports.forgotPassword = async (req, res) => {
 
     await sendEmail({
       to: user.email,
-      subject: 'Sunlit Power - Reset Password',
+      subject: 'Sunlit Power Pvt Ltd - Reset Password',
       html: mailHtml
     });
 
