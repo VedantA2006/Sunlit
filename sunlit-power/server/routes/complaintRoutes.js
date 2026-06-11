@@ -11,6 +11,7 @@ router.post('/', verifyToken, requireRole(['customer']), upload.array('images', 
 router.get('/mine', verifyToken, requireRole(['customer']), complaintController.getMyComplaints);
 router.get('/', verifyToken, requireRole(['admin']), complaintController.getAllComplaints);
 router.get('/assigned', verifyToken, requireRole(['technician']), complaintController.getAssignedComplaints);
+router.get('/customer/:customerId', verifyToken, requireRole(['admin']), complaintController.getComplaintsByCustomer);
 router.get('/:id', verifyToken, complaintController.getComplaintById);
 
 router.put('/:id/assign', verifyToken, requireRole(['admin']), complaintController.assignTechnician);

@@ -51,6 +51,16 @@ export const AdminDashboard = () => {
     technicianId: ''
   });
 
+  // Customer Complaint History Modal
+  const [customerHistoryModal, setCustomerHistoryModal] = useState({
+    isOpen: false,
+    isLoading: false,
+    customer: null,
+    complaints: [],
+    totalComplaints: 0,
+    totalBatteries: 0
+  });
+
   const loadData = useCallback(async () => {
     setIsLoading(true);
     setError('');
@@ -192,6 +202,26 @@ export const AdminDashboard = () => {
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  // Fetch full complaint history for a given customer
+  const fetchCustomerHistory = async (customerId) => {
+    setCustomerHistoryModal(prev => ({ ...prev, isOpen: true, isLoading: true }));
+    try {
+      const res = await api.get(`/complaints/customer/${customerId}`);
+      setCustomerHistoryModal({
+        isOpen: true,
+        isLoading: false,
+        customer: res.data.customer,
+        complaints: res.data.complaints,
+        totalComplaints: res.data.totalComplaints,
+        totalBatteries: res.data.totalBatteries
+      });
+    } catch (err) {
+      console.error(err);
+      setError('Failed to load customer complaint history.');
+      setCustomerHistoryModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
+    }
   };
 
   // Color arrays for Recharts Pie charts
@@ -551,8 +581,15 @@ export const AdminDashboard = () => {
                     <tr key={ticket._id} className="hover:bg-surface-container-low/35 transition-colors">
                       <td className="py-4 px-5 font-extrabold text-on-surface">{ticket.complaintId}</td>
                       <td className="py-4 px-4 font-semibold text-on-surface">
-                        {ticket.customerId?.name}
-                        <span className="block text-[10px] text-on-surface-variant font-normal">{ticket.customerId?.phone}</span>
+                        <button
+                          type="button"
+                          onClick={() => fetchCustomerHistory(ticket.customerId?._id)}
+                          className="text-left hover:text-primary transition-colors group"
+                          title="View full complaint history for this customer"
+                        >
+                          <span className="group-hover:underline">{ticket.customerId?.name}</span>
+                          <span className="block text-[10px] text-on-surface-variant font-normal group-hover:text-primary/70">{ticket.customerId?.phone}</span>
+                        </button>
                       </td>
                       <td className="py-4 px-4">
                         <span className="font-semibold text-on-surface">{ticket.batteryId?.model}</span>
@@ -698,6 +735,203 @@ export const AdminDashboard = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Customer Complaint History Modal */}
+      {customerHistoryModal.isOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-5xl w-full shadow-2xl border border-outline-variant relative text-left flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex justify-between items-center border-b border-outline-variant p-6 pb-4">
+              <div>
+                <h3 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">person_search</span>
+                  Customer Complaint History
+                </h3>
+                {customerHistoryModal.customer && (
+                  <p className="text-xs text-on-surface-variant mt-1">
+                    Full service record for <strong className="text-on-surface">{customerHistoryModal.customer.name}</strong>
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => setCustomerHistoryModal(prev => ({ ...prev, isOpen: false }))}
+                className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-on-surface-variant transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            {/* Content */}
+            {customerHistoryModal.isLoading ? (
+              <div className="py-20 flex justify-center items-center">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <div className="overflow-y-auto flex-1 p-6 pt-4">
+                {/* Customer Profile Card */}
+                {customerHistoryModal.customer && (
+                  <div className="bg-surface-container-low border border-outline-variant rounded-xl p-5 mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <span className="text-[10px] text-outline uppercase font-semibold tracking-wider block mb-0.5">Customer Name</span>
+                        <span className="text-sm font-bold text-on-surface">{customerHistoryModal.customer.name}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-outline uppercase font-semibold tracking-wider block mb-0.5">Email</span>
+                        <span className="text-xs font-semibold text-on-surface">{customerHistoryModal.customer.email}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-outline uppercase font-semibold tracking-wider block mb-0.5">Phone</span>
+                        <span className="text-xs font-semibold text-on-surface">{customerHistoryModal.customer.phone || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-outline uppercase font-semibold tracking-wider block mb-0.5">Address</span>
+                        <span className="text-xs font-semibold text-on-surface line-clamp-2">{customerHistoryModal.customer.address || 'N/A'}</span>
+                      </div>
+                    </div>
+
+                    {/* Quick Stats */}
+                    <div className="flex gap-4 mt-4 pt-4 border-t border-outline-variant/30">
+                      <div className="flex items-center gap-2 bg-primary/5 border border-primary/10 px-3 py-2 rounded-lg">
+                        <span className="material-symbols-outlined text-primary text-base">confirmation_number</span>
+                        <div>
+                          <span className="text-lg font-black text-on-surface leading-none">{customerHistoryModal.totalComplaints}</span>
+                          <span className="text-[10px] text-outline block font-semibold">Total Complaints</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-secondary/5 border border-secondary/10 px-3 py-2 rounded-lg">
+                        <span className="material-symbols-outlined text-secondary text-base">battery_charging_full</span>
+                        <div>
+                          <span className="text-lg font-black text-on-surface leading-none">{customerHistoryModal.totalBatteries}</span>
+                          <span className="text-[10px] text-outline block font-semibold">Registered Batteries</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-green-50 border border-green-100 px-3 py-2 rounded-lg">
+                        <span className="material-symbols-outlined text-green-600 text-base">check_circle</span>
+                        <div>
+                          <span className="text-lg font-black text-on-surface leading-none">
+                            {customerHistoryModal.complaints.filter(c => c.status === 'Resolved' || c.status === 'Closed').length}
+                          </span>
+                          <span className="text-[10px] text-outline block font-semibold">Resolved / Closed</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 px-3 py-2 rounded-lg">
+                        <span className="material-symbols-outlined text-amber-600 text-base">pending</span>
+                        <div>
+                          <span className="text-lg font-black text-on-surface leading-none">
+                            {customerHistoryModal.complaints.filter(c => c.status !== 'Resolved' && c.status !== 'Closed').length}
+                          </span>
+                          <span className="text-[10px] text-outline block font-semibold">Open / Active</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Complaints History Table */}
+                <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-3 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">history</span>
+                  Complete Complaint History
+                </h4>
+
+                {customerHistoryModal.complaints.length === 0 ? (
+                  <div className="bg-surface border border-outline-variant border-dashed rounded-xl p-10 text-center text-outline">
+                    <span className="material-symbols-outlined text-3xl mb-1 opacity-50">inbox</span>
+                    <p className="text-xs font-semibold">This customer has no complaint history.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-surface-container-low border-b border-outline-variant text-[10px] font-bold text-outline uppercase tracking-wider">
+                          <th className="py-3 px-4">#</th>
+                          <th className="py-3 px-4">Complaint ID</th>
+                          <th className="py-3 px-4">Date Raised</th>
+                          <th className="py-3 px-4">Battery</th>
+                          <th className="py-3 px-4">Problem Type</th>
+                          <th className="py-3 px-4">Priority</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4">Resolved Date</th>
+                          <th className="py-3 px-4">Technician</th>
+                          <th className="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-outline-variant/30 text-xs">
+                        {customerHistoryModal.complaints.map((comp, idx) => (
+                          <tr key={comp._id} className="hover:bg-surface-container-low/35 transition-colors">
+                            <td className="py-3.5 px-4 text-outline font-mono font-semibold">{idx + 1}</td>
+                            <td className="py-3.5 px-4 font-extrabold text-on-surface">{comp.complaintId}</td>
+                            <td className="py-3.5 px-4 text-on-surface-variant font-semibold">
+                              {new Date(comp.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className="font-semibold text-on-surface">{comp.batteryId?.model || 'N/A'}</span>
+                              <span className="block text-[10px] font-mono text-outline">{comp.batteryId?.serialNumber || ''}</span>
+                            </td>
+                            <td className="py-3.5 px-4 font-semibold text-on-surface">{comp.type}</td>
+                            <td className="py-3.5 px-4">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                comp.priority === 'Critical' ? 'bg-red-50 text-red-700' :
+                                comp.priority === 'High' ? 'bg-orange-50 text-orange-700' :
+                                comp.priority === 'Medium' ? 'bg-yellow-50 text-yellow-700' :
+                                'bg-slate-100 text-slate-700'
+                              }`}>
+                                {comp.priority}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                comp.status === 'Submitted' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                                comp.status === 'Assigned' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
+                                comp.status === 'In Progress' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                                comp.status === 'Resolved' ? 'bg-green-50 text-green-700 border border-green-100' :
+                                'bg-slate-100 text-slate-700 border border-slate-200'
+                              }`}>
+                                {comp.status}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-on-surface-variant font-semibold">
+                              {comp.resolvedAt
+                                ? new Date(comp.resolvedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                                : <span className="text-outline italic">Pending</span>
+                              }
+                            </td>
+                            <td className="py-3.5 px-4 font-semibold text-on-surface">
+                              {comp.technicianId?.name || <span className="text-outline italic font-normal">Unassigned</span>}
+                            </td>
+                            <td className="py-3.5 px-4 text-right">
+                              <button
+                                onClick={() => {
+                                  setCustomerHistoryModal(prev => ({ ...prev, isOpen: false }));
+                                  navigate(`/complaints/${comp._id}`);
+                                }}
+                                className="bg-surface-container-high text-on-surface px-2.5 py-1 rounded-md text-[10px] font-bold hover:bg-outline-variant/30 transition-colors"
+                              >
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="border-t border-outline-variant/30 p-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setCustomerHistoryModal(prev => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 bg-surface-container-high hover:bg-outline-variant/35 text-on-surface text-xs font-bold rounded-xl transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

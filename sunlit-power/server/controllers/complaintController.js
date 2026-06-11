@@ -511,6 +511,41 @@ exports.deleteComplaint = async (req, res) => {
   }
 };
 
+// Admin: Get all complaints for a specific customer
+exports.getComplaintsByCustomer = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+    if (!customerId) {
+      return res.status(400).json({ message: 'Customer ID is required' });
+    }
+
+    // Fetch the customer info
+    const customer = await User.findById(customerId).select('name email phone address').lean();
+    if (!customer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    // Fetch all batteries belonging to this customer
+    const batteries = await Battery.find({ customerId }).lean();
+
+    // Fetch all complaints for this customer
+    const complaints = await Complaint.find({ customerId })
+      .populate('batteryId', 'serialNumber model purchaseDate warrantyYears dealerName')
+      .populate('technicianId', 'name phone email')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(200).json({
+      customer,
+      totalComplaints: complaints.length,
+      totalBatteries: batteries.length,
+      complaints
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to get customer complaint history', error: error.message });
+  }
+};
+
 exports.trackComplaint = async (req, res) => {
   try {
     const { complaintId } = req.params;
