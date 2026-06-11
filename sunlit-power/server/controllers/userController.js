@@ -2,6 +2,8 @@ const User = require('../models/User');
 const Customer = require('../models/Customer');
 const Technician = require('../models/Technician');
 const bcrypt = require('bcryptjs');
+const sendEmail = require('../utils/sendEmail');
+const { adminCreatedUserEmail } = require('../utils/emailTemplates');
 
 // Get all users
 exports.getAllUsers = async (req, res) => {
@@ -64,6 +66,12 @@ exports.createUser = async (req, res) => {
       });
       await newTechnician.save();
     }
+
+    // Send welcome email with credentials
+    const emailData = adminCreatedUserEmail({ name, email, role, password });
+    sendEmail({ to: email, subject: emailData.subject, html: emailData.html }).catch(err => {
+      console.error('Failed to send admin-created user welcome email:', err.message);
+    });
 
     const userResponse = newUser.toObject();
     delete userResponse.passwordHash;
